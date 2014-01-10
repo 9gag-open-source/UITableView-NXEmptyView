@@ -11,6 +11,7 @@
 #import "UITableView+NXEmptyView.h"
 
 
+static const NSString *NXEmptyViewOldInsetsKey = @"NXEmptyViewOldInsetsKey";
 static const NSString *NXEmptyViewAssociatedKey = @"NXEmptyViewAssociatedKey";
 static const NSString *NXEmptyViewHideSeparatorLinesAssociatedKey = @"NXEmptyViewHideSeparatorLinesAssociatedKey";
 static const NSString *NXEmptyViewPreviousSeparatorStyleAssociatedKey = @"NXEmptyViewPreviousSeparatorStyleAssociatedKey";
@@ -83,6 +84,19 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     objc_setAssociatedObject(self, &NXEmptyViewHideSeparatorLinesAssociatedKey, hideSeparator, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+@dynamic nxEV_oldInsets;
+- (UIEdgeInsets)nxEV_oldInsets
+{
+    NSValue *value = objc_getAssociatedObject(self, &NXEmptyViewOldInsetsKey);
+    return value ? [value UIEdgeInsetsValue] : UIEdgeInsetsZero;
+}
+
+- (void)setNxEV_oldInsets:(UIEdgeInsets)insets
+{
+    NSValue *value = [NSValue valueWithUIEdgeInsets:insets];
+    objc_setAssociatedObject(self, &NXEmptyViewOldInsetsKey, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 
 #pragma mark Updating
 
@@ -99,7 +113,12 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     // setup empty view frame
     CGRect emptyViewFrame = self.bounds;
     emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, UIEdgeInsetsMake(CGRectGetHeight(self.tableHeaderView.frame), 0, 0, 0));
-    emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, self.contentInset);
+    if(!UIEdgeInsetsEqualToEdgeInsets(self.nxEV_oldInsets, UIEdgeInsetsMake(self.contentInset.top-60, self.contentInset.left, self.contentInset.bottom, self.contentInset.right))){ //60 is refresh control height
+        emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, self.contentInset);
+    } else {
+        emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, self.nxEV_oldInsets);
+    }
+    [self setNxEV_oldInsets:self.contentInset];
     emptyViewFrame.origin = CGPointMake(0, 0);
     emptyView.frame = emptyViewFrame;
     emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
