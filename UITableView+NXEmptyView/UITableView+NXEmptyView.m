@@ -15,6 +15,7 @@ static const NSString *NXEmptyViewOldInsetsKey = @"NXEmptyViewOldInsetsKey";
 static const NSString *NXEmptyViewAssociatedKey = @"NXEmptyViewAssociatedKey";
 static const NSString *NXEmptyViewHideSeparatorLinesAssociatedKey = @"NXEmptyViewHideSeparatorLinesAssociatedKey";
 static const NSString *NXEmptyViewPreviousSeparatorStyleAssociatedKey = @"NXEmptyViewPreviousSeparatorStyleAssociatedKey";
+static const NSString *NXEmptyViewPreferredSize = @"NXEmptyViewPreferredSize";
 
 
 void nxEV_swizzle(Class c, SEL orig, SEL new)
@@ -97,6 +98,18 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     objc_setAssociatedObject(self, &NXEmptyViewOldInsetsKey, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+@dynamic nxEV_preferredSize;
+- (CGSize)nxEV_preferredSize
+{
+    NSValue *value = objc_getAssociatedObject(self, &NXEmptyViewPreferredSize);
+    return value ? [value CGSizeValue] : CGSizeZero;
+}
+
+- (void)setNxEV_preferredSize:(CGSize)size
+{
+    NSValue *value = [NSValue valueWithCGSize:size];
+    objc_setAssociatedObject(self, &NXEmptyViewPreferredSize, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 #pragma mark Updating
 
@@ -110,16 +123,20 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
         [self addSubview:emptyView];
     }
     
-    // setup empty view frame
-    CGRect emptyViewFrame = self.bounds;
-    emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, UIEdgeInsetsMake(CGRectGetHeight(self.tableHeaderView.frame), 0, 0, 0));
-    if(!UIEdgeInsetsEqualToEdgeInsets(self.nxEV_oldInsets, UIEdgeInsetsMake(self.contentInset.top-60, self.contentInset.left, self.contentInset.bottom, self.contentInset.right))){ //60 is refresh control height
-        emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, self.contentInset);
+    CGRect emptyViewFrame;
+    if(CGSizeEqualToSize(self.nxEV_preferredSize, CGSizeZero)){
+        emptyViewFrame = self.bounds;
+        emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, UIEdgeInsetsMake(CGRectGetHeight(self.tableHeaderView.frame), 0, 0, 0));
+        if(!UIEdgeInsetsEqualToEdgeInsets(self.nxEV_oldInsets, UIEdgeInsetsMake(self.contentInset.top-60, self.contentInset.left, self.contentInset.bottom, self.contentInset.right))){ //60 is refresh control height
+            emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, self.contentInset);
+        } else {
+            emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, self.nxEV_oldInsets);
+        }
+        [self setNxEV_oldInsets:self.contentInset];
+        emptyViewFrame.origin = CGPointMake(0, 0);
     } else {
-        emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, self.nxEV_oldInsets);
+        emptyViewFrame = CGRectMake(self.bounds.origin.x, self.tableHeaderView.frame.size.height, self.nxEV_preferredSize.width, self.nxEV_preferredSize.height);
     }
-    [self setNxEV_oldInsets:self.contentInset];
-    emptyViewFrame.origin = CGPointMake(0, 0);
     emptyView.frame = emptyViewFrame;
     emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
     
