@@ -13,7 +13,7 @@
 @property (nonatomic, strong) IBOutlet UIView *nxEV_emptyView;
 @property (nonatomic, assign) BOOL nxEV_hideSeparatorLinesWheyShowingEmptyView;
 @property (nonatomic, assign) UIEdgeInsets nxEV_oldInsets;
-@property (nonatomic, assign) CGSize nxEV_preferredSize;
+@property (nonatomic, assign) CGFloat nxEV_preferredHeight;
 
 @end
 

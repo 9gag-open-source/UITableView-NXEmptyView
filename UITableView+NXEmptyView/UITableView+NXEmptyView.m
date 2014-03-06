@@ -15,7 +15,7 @@ static const NSString *NXEmptyViewOldInsetsKey = @"NXEmptyViewOldInsetsKey";
 static const NSString *NXEmptyViewAssociatedKey = @"NXEmptyViewAssociatedKey";
 static const NSString *NXEmptyViewHideSeparatorLinesAssociatedKey = @"NXEmptyViewHideSeparatorLinesAssociatedKey";
 static const NSString *NXEmptyViewPreviousSeparatorStyleAssociatedKey = @"NXEmptyViewPreviousSeparatorStyleAssociatedKey";
-static const NSString *NXEmptyViewPreferredSize = @"NXEmptyViewPreferredSize";
+static const NSString *NXEmptyViewPreferredHeight = @"NXEmptyViewPreferredHeight";
 
 
 void nxEV_swizzle(Class c, SEL orig, SEL new)
@@ -98,17 +98,17 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     objc_setAssociatedObject(self, &NXEmptyViewOldInsetsKey, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-@dynamic nxEV_preferredSize;
-- (CGSize)nxEV_preferredSize
+@dynamic nxEV_preferredHeight;
+- (CGFloat)nxEV_preferredHeight
 {
-    NSValue *value = objc_getAssociatedObject(self, &NXEmptyViewPreferredSize);
-    return value ? [value CGSizeValue] : CGSizeZero;
+    NSNumber *value = objc_getAssociatedObject(self, &NXEmptyViewPreferredHeight);
+    return value ? [value floatValue] : 0;
 }
 
-- (void)setNxEV_preferredSize:(CGSize)size
+- (void)setNxEV_preferredHeight:(CGFloat)height
 {
-    NSValue *value = [NSValue valueWithCGSize:size];
-    objc_setAssociatedObject(self, &NXEmptyViewPreferredSize, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    NSNumber *value = [NSNumber numberWithFloat:height];
+    objc_setAssociatedObject(self, &NXEmptyViewPreferredHeight, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 #pragma mark Updating
@@ -124,7 +124,7 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     }
     
     CGRect emptyViewFrame;
-    if(CGSizeEqualToSize(self.nxEV_preferredSize, CGSizeZero)){
+    if(self.nxEV_preferredHeight == 0){
         emptyViewFrame = self.bounds;
         emptyViewFrame = UIEdgeInsetsInsetRect(emptyViewFrame, UIEdgeInsetsMake(CGRectGetHeight(self.tableHeaderView.frame), 0, 0, 0));
         if(!UIEdgeInsetsEqualToEdgeInsets(self.nxEV_oldInsets, UIEdgeInsetsMake(self.contentInset.top-60, self.contentInset.left, self.contentInset.bottom, self.contentInset.right))){ //60 is refresh control height
@@ -135,7 +135,7 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
         [self setNxEV_oldInsets:self.contentInset];
         emptyViewFrame.origin = CGPointMake(0, 0);
     } else {
-        emptyViewFrame = CGRectMake(self.bounds.origin.x, self.tableHeaderView.frame.size.height, self.nxEV_preferredSize.width, self.nxEV_preferredSize.height);
+        emptyViewFrame = CGRectMake(self.bounds.origin.x, self.tableHeaderView.frame.size.height, self.bounds.size.width, self.nxEV_preferredHeight);
     }
     emptyView.frame = emptyViewFrame;
     emptyView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
@@ -143,6 +143,15 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
     // check available data
     BOOL emptyViewShouldBeShown = (self.nxEV_hasRowsToDisplay == NO);
     BOOL emptyViewIsShown       = (!emptyView.hidden);
+    
+    if(emptyViewShouldBeShown){
+        if(self.nxEV_preferredHeight){
+            [self setContentSize:CGSizeMake(self.contentSize.width,
+                                            self.tableHeaderView.frame.size.height
+                                            +(self.infiniteScrollingView && self.infiniteScrollingView.enabled && !self.infiniteScrollingView.hidden? MAX(0,self.nxEV_preferredHeight-self.infiniteScrollingView.frame.size.height) : self.nxEV_preferredHeight)
+                                            +self.tableFooterView.frame.size.height)];
+        }
+    }
     
     // check bypassing
     if (emptyViewShouldBeShown && [self.dataSource respondsToSelector:@selector(tableViewShouldBypassNXEmptyView:)]) {
