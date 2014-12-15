@@ -9,6 +9,7 @@
 #import <objc/runtime.h>
 
 #import "UITableView+NXEmptyView.h"
+#import "UIScrollView+SVInfiniteScrolling.h"
 
 
 static const NSString *NXEmptyViewOldInsetsKey = @"NXEmptyViewOldInsetsKey";
