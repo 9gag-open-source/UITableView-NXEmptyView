@@ -149,7 +149,7 @@ void nxEV_swizzle(Class c, SEL orig, SEL new)
         if(self.nxEV_preferredHeight){
             [self setContentSize:CGSizeMake(self.contentSize.width,
                                             self.tableHeaderView.frame.size.height
-                                            +(self.infiniteScrollingView && self.infiniteScrollingView.enabled && !self.infiniteScrollingView.hidden? MAX(0,self.nxEV_preferredHeight-self.infiniteScrollingView.frame.size.height) : self.nxEV_preferredHeight)
+                                            +(self.infiniteScrollingView && !self.infiniteScrollingView.hidden? MAX(0,self.nxEV_preferredHeight-self.infiniteScrollingView.frame.size.height) : self.nxEV_preferredHeight)
                                             +self.tableFooterView.frame.size.height)];
         }
     }
